@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>PDF Converter · Phone App | We Love PDF</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- PDF.js core + worker -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <!-- JSZip for image archives -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- docx library for real Word documents -->
+    <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4DB6AC;
+            --primary-dark: #3a9b8f;
+            --orange: #FFA726;
+            --orange-dark: #f39c12;
+            --text-main: #1e2a32;
+            --text-muted: #6c7a89;
+            --bg-body: #49c5b6;
+            --bg-app: #F8FAFB;
+            --white: #ffffff;
+            --card-radius: 28px;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Phone Container */
+        .phone-container {
+            width: 380px;
+            height: 780px;
+            background-color: var(--bg-app);
+            border-radius: 48px;
+            box-shadow: 0 30px 50px rgba(0,0,0,0.25);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 8px solid #2c2e3a;
+        }
+
+        /* Header */
+        .header {
+            padding: 28px 18px 8px;
+            background: var(--bg-app);
+        }
+        .search-bar {
+            background: white;
+            display: flex;
+            align-items: center;
+            padding: 10px 14px;
+            border-radius: 32px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            border: 1px solid #eef2f5;
+        }
+        .search-bar i { color: #b0bec5; margin-right: 10px; font-size: 0.9rem; }
+        .search-bar input { border: none; outline: none; flex: 1; font-size: 0.85rem; background: transparent; }
+        .camera-btn { color: var(--primary); font-size: 1rem; }
+
+        /* Scroll area */
+        .scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 16px 80px;
+            scrollbar-width: thin;
+        }
+        .scroll-area::-webkit-scrollbar {
+            width: 3px;
+        }
+        .scroll-area::-webkit-scrollbar-track {
+            background: #e9ecef;
+            border-radius: 10px;
+        }
+        .scroll-area::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        /* Quick action grid */
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .action-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .icon-box {
+            width: 52px;
+            height: 52px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 6px;
+            font-size: 1.3rem;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .icon-box.teal { color: var(--primary); }
+        .icon-box.orange { color: var(--orange); }
+        .icon-box.blue { color: #42A5F5; }
+        .action-item span {
+            font-size: 0.65rem;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin: 14px 0 10px 0;
+        }
+        .section-header h3 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .section-header a {
+            font-size: 0.7rem;
+            color: var(--primary);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Converter Card */
+        .converter-card {
+            background: white;
+            border-radius: 32px;
+            padding: 20px 18px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+            border: 1px solid #f0f3f8;
+        }
+        .converter-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .converter-title i {
+            font-size: 1.5rem;
+            color: #ff6b6b;
+        }
+        .converter-title span {
+            font-weight: 800;
+            font-size: 1rem;
+            background: linear-gradient(135deg, #e67e22, #f39c12);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .upload-area {
+            background: #fffdf7;
+            border: 2px dashed #ffe0b5;
+            border-radius: 24px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 16px;
+        }
+        .upload-area:hover {
+            border-color: var(--orange);
+            background: #fff9ef;
+            transform: scale(0.98);
+        }
+        .upload-area i {
+            font-size: 2rem;
+            color: var(--orange);
+            margin-bottom: 6px;
+        }
+        .upload-area h4 {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #2d3e50;
+        }
+        .upload-area p {
+            color: var(--text-muted);
+            font-size: 0.65rem;
+            margin-top: 4px;
+        }
+        .file-badge {
+            background: #eef2fa;
+            border-radius: 40px;
+            padding: 5px 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            margin-top: 8px;
+        }
+        .format-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin: 12px 0 8px 0;
+        }
+        .format-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+        .format-chip {
+            background: #f2f5f9;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.2s;
+            color: #3a4b5e;
+        }
+        .format-chip i {
+            font-size: 0.75rem;
+        }
+        .format-chip.active {
+            background: var(--orange);
+            color: white;
+            box-shadow: 0 4px 12px rgba(255,167,38,0.35);
+        }
+        .convert-btn {
+            width: 100%;
+            background: linear-gradient(95deg, var(--primary), var(--primary-dark));
+            border: none;
+            padding: 12px 0;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: 0.2s;
+            margin: 6px 0 12px 0;
+            box-shadow: 0 6px 14px rgba(77,182,172,0.35);
+        }
+        .convert-btn:disabled {
+            background: #b9cfca;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .status-area {
+            background: #fef5e8;
+            border-radius: 20px;
+            padding: 10px 14px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #a5682c;
+            border-left: 3px solid var(--orange);
+        }
+        .loader-mini {
+            width: 14px;
+            height: 14px;
+            border: 2px solid #ffcd94;
+            border-top: 2px solid var(--orange);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* File cards (recent & files list) */
+        .file-card {
+            background: white;
+            border-radius: 20px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+            border: 1px solid #f0f3f8;
+        }
+        .file-thumb {
+            width: 45px;
+            height: 55px;
+            background: #f5f7fc;
+            border-radius: 14px;
+            margin-right: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+        .file-info {
+            flex: 1;
+        }
+        .file-info h4 {
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            word-break: break-word;
+        }
+        .file-info p {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+        }
+        .file-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .file-actions i {
+            cursor: pointer;
+            font-size: 1rem;
+            color: var(--primary);
+            transition: 0.1s;
+        }
+        .file-actions i:hover {
+            opacity: 0.7;
+        }
+        .clear-all-btn {
+            background: #fee2e2;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: #e53e3e;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            margin-bottom: 12px;
+        }
+
+        /* Settings screen extras */
+        .premium-card {
+            background: white;
+            border-radius: 28px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.04);
+        }
+        .premium-card h2 { font-size: 1rem; margin-bottom: 5px; }
+        .premium-card p { font-size: 0.7rem; color: var(--text-muted); }
+        .premium-features {
+            display: flex;
+            justify-content: space-around;
+            margin: 16px 0;
+        }
+        .feature { font-size: 0.65rem; text-align: center; }
+        .feature i { font-size: 1.3rem; color: var(--primary); margin-bottom: 6px; display: block; }
+        .upgrade-btn {
+            background: var(--orange);
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 40px;
+            font-weight: 700;
+            color: white;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .upgrade-btn:hover { background: #e67e22; }
+        .settings-list {
+            padding: 0 4px;
+        }
+        .settings-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid #edf2f7;
+            font-size: 0.8rem;
+        }
+        .settings-item i:first-child { width: 32px; color: var(--primary); }
+        .settings-item i:last-child { margin-left: auto; color: #cbd5e1; font-size: 0.7rem; }
+        .github-btn {
+            background: #24292e;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 10px 16px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 8px;
+            width: 100%;
+            justify-content: center;
+        }
+        .github-btn i { font-size: 1rem; }
+        .github-btn:hover { background: #1b1f23; transform: scale(0.97); }
+
+        /* Bottom navigation */
+        .bottom-nav {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: white;
+            height: 68px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid #eef2fa;
+            backdrop-filter: blur(10px);
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #a0aec0;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .nav-item.active {
+            color: var(--primary);
+        }
+        .nav-item i { font-size: 1.2rem; margin-bottom: 4px; }
+        .nav-item span { font-size: 0.6rem; font-weight: 500; }
+
+        .screen { display: none; flex-direction: column; height: 100%; }
+        .screen.active { display: flex; }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+        .empty-state i {
+            font-size: 2rem;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+
+<div class="phone-container">
+    
+    <!-- HOME SCREEN (Converter Core) -->
+    <div id="home-screen" class="screen active">
+        <div class="header">
+            <div class="search-bar">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" placeholder="Search PDFs">
+                <i class="fa-solid fa-camera camera-btn"></i>
+            </div>
+        </div>
+        <div class="scroll-area">
+            <div class="action-grid">
+                <div class="action-item"><div class="icon-box teal"><i class="fa-solid fa-qrcode"></i></div><span>Smart Scan</span></div>
+                <div class="action-item"><div class="icon-box blue"><i class="fa-solid fa-file-lines"></i></div><span>Docs</span></div>
+                <div class="action-item"><div class="icon-box teal"><i class="fa-solid fa-file-pdf"></i></div><span>SVG to PDF</span></div>
+                <div class="action-item"><div class="icon-box teal"><i class="fa-solid fa-image"></i></div><span>Import Image</span></div>
+            </div>
+
+            <!-- Converter Card -->
+            <div class="converter-card">
+                <div class="converter-title">
+                    <i class="fa-regular fa-heart"></i>
+                    <span>We Love PDF · Convert</span>
+                </div>
+                <div class="upload-area" id="uploadArea">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <h4>Tap or drop PDF here</h4>
+                    <p>max 30MB · 100% local & private</p>
+                    <input type="file" id="fileInput" accept=".pdf" style="display: none;" />
+                    <div id="filePreview" class="file-badge" style="display: none;">
+                        <i class="fa-regular fa-file-pdf"></i> <span id="fileName"></span>
+                    </div>
+                </div>
+                
+                <div class="format-label"><i class="fa-regular fa-circle-dot"></i> Output format</div>
+                <div class="format-grid" id="formatGrid">
+                    <button data-format="docx" class="format-chip"><i class="fa-regular fa-file-word"></i> DOCX</button>
+                    <button data-format="html" class="format-chip"><i class="fa-solid fa-code"></i> HTML</button>
+                    <button data-format="txt" class="format-chip"><i class="fa-regular fa-file-lines"></i> TXT</button>
+                    <button data-format="png" class="format-chip"><i class="fa-regular fa-image"></i> PNG (ZIP)</button>
+                    <button data-format="jpg" class="format-chip"><i class="fa-regular fa-camera"></i> JPG (ZIP)</button>
+                </div>
+                
+                <button id="convertBtn" class="convert-btn"><i class="fa-solid fa-wand-magic"></i> Convert Now</button>
+                
+                <div id="statusMessage" class="status-area">
+                    <i class="fa-regular fa-heart" style="color:#f39c12;"></i>
+                    <span id="statusText">Ready · Upload PDF & pick format</span>
+                </div>
+            </div>
+
+            <div class="section-header">
+                <h3>Recent Files</h3>
+                <a id="clearRecentBtn" style="cursor:pointer;">Clear all <i class="fa-solid fa-trash-can"></i></a>
+            </div>
+            <div id="recentFilesContainer">
+                <div class="empty-state">
+                    <i class="fa-regular fa-folder-open"></i>
+                    <p>No files yet. Convert a PDF to see your files here.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILES SCREEN (fully working) -->
+    <div id="files-screen" class="screen">
+        <div class="header">
+            <div class="search-bar">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" placeholder="Search files" id="fileSearchInput">
+                <i class="fa-solid fa-camera camera-btn"></i>
+            </div>
+        </div>
+        <div class="scroll-area">
+            <div class="action-grid">
+                <div class="action-item"><div class="icon-box orange"><i class="fa-solid fa-code-merge"></i></div><span>Merge PDF</span></div>
+                <div class="action-item"><div class="icon-box teal"><i class="fa-solid fa-image"></i></div><span>Import Image</span></div>
+                <div class="action-item"><div class="icon-box orange"><i class="fa-solid fa-folder-plus"></i></div><span>New Folder</span></div>
+                <div class="action-item"><div class="icon-box teal"><i class="fa-solid fa-file-import"></i></div><span>Import Files</span></div>
+            </div>
+            <div class="section-header">
+                <h3>All files (<span id="fileCount">0</span>)</h3>
+                <div>
+                    <i class="fa-solid fa-trash-can" id="clearAllFilesBtn" style="color: var(--primary); cursor: pointer;"></i>
+                </div>
+            </div>
+            <div id="allFilesContainer">
+                <div class="empty-state">
+                    <i class="fa-regular fa-folder-open"></i>
+                    <p>No generated files yet. Convert a document to see it here.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTINGS SCREEN (with GitHub button and credit) -->
+    <div id="settings-screen" class="screen">
+        <div class="scroll-area">
+            <div class="premium-card">
+                <h2>✨ Free & Private Converter</h2>
+                <p>All conversions happen locally · No uploads</p>
+                <div class="premium-features">
+                    <div class="feature"><i class="fa-solid fa-ban"></i>No servers</div>
+                    <div class="feature"><i class="fa-solid fa-pen-to-square"></i>Real DOCX</div>
+                    <div class="feature"><i class="fa-solid fa-cloud-arrow-up"></i>Local only</div>
+                </div>
+                <button class="upgrade-btn" id="premiumFakeBtn"><i class="fa-regular fa-gem"></i> All features free</button>
+            </div>
+            
+            <div class="settings-list">
+                <div class="settings-item"><i class="fa-regular fa-user"></i> Privacy-first mode <i class="fa-solid fa-shield-halved"></i></div>
+                <div class="settings-item"><i class="fa-solid fa-expand"></i> Local PDF engine <i class="fa-solid fa-check-circle" style="color:#4DB6AC;"></i></div>
+                <div class="settings-item"><i class="fa-solid fa-file-contract"></i> Client-side only <i class="fa-solid fa-lock"></i></div>
+                <div class="settings-item"><i class="fa-regular fa-comment-dots"></i> Written by ℒ <i class="fa-regular fa-heart"></i></div>
+                <div style="margin-top: 16px;">
+                    <button id="githubBtn" class="github-btn"><i class="fa-brands fa-github"></i> GitHub · Ottahen</button>
+                </div>
+                <div class="settings-item" style="border-bottom: none; justify-content: center; gap: 8px;">
+                    <i class="fa-regular fa-copyright"></i> We Love PDF · Open Source
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM NAVIGATION -->
+    <nav class="bottom-nav">
+        <div class="nav-item active" data-screen="home-screen"><i class="fa-solid fa-house"></i><span>Home</span></div>
+        <div class="nav-item" data-screen="files-screen"><i class="fa-regular fa-file-lines"></i><span>Files</span></div>
+        <div class="nav-item" data-screen="settings-screen"><i class="fa-solid fa-gear"></i><span>Settings</span></div>
+    </nav>
+</div>
+
+<script>
+    // -------------------- FILE MANAGEMENT SYSTEM --------------------
+    let generatedFiles = []; // each item: { id, name, blobUrl, size, date, type }
+
+    function addGeneratedFile(fileName, blobUrl, fileSize, mimeType) {
+        const id = Date.now() + '-' + Math.random().toString(36).substr(2, 6);
+        generatedFiles.unshift({
+            id: id,
+            name: fileName,
+            blobUrl: blobUrl,
+            size: fileSize,
+            date: new Date(),
+            mimeType: mimeType
+        });
+        renderAllFiles();
+        renderRecentFiles();
+    }
+
+    function deleteFileById(id) {
+        const index = generatedFiles.findIndex(f => f.id === id);
+        if (index !== -1) {
+            URL.revokeObjectURL(generatedFiles[index].blobUrl);
+            generatedFiles.splice(index, 1);
+            renderAllFiles();
+            renderRecentFiles();
+        }
+    }
+
+    function clearAllFiles() {
+        for (let f of generatedFiles) {
+            URL.revokeObjectURL(f.blobUrl);
+        }
+        generatedFiles = [];
+        renderAllFiles();
+        renderRecentFiles();
+    }
+
+    function renderRecentFiles() {
+        const container = document.getElementById('recentFilesContainer');
+        if (!container) return;
+        const recent = generatedFiles.slice(0, 5);
+        if (recent.length === 0) {
+            container.innerHTML = `<div class="empty-state"><i class="fa-regular fa-folder-open"></i><p>No files yet. Convert a PDF to see your files here.</p></div>`;
+            return;
+        }
+        container.innerHTML = recent.map(file => `
+            <div class="file-card">
+                <div class="file-thumb">${getFileIcon(file.name)}</div>
+                <div class="file-info">
+                    <h4>${escapeHtml(file.name.length > 30 ? file.name.slice(0,27)+'...' : file.name)}</h4>
+                    <p>${formatDate(file.date)} · ${formatSize(file.size)}</p>
+                </div>
+                <div class="file-actions">
+                    <i class="fa-solid fa-download" onclick="downloadFileById('${file.id}')"></i>
+                    <i class="fa-solid fa-trash-can" onclick="deleteFileById('${file.id}')"></i>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderAllFiles() {
+        const container = document.getElementById('allFilesContainer');
+        const countSpan = document.getElementById('fileCount');
+        if (!container) return;
+        const searchTerm = document.getElementById('fileSearchInput')?.value.toLowerCase() || '';
+        let filtered = generatedFiles;
+        if (searchTerm) {
+            filtered = generatedFiles.filter(f => f.name.toLowerCase().includes(searchTerm));
+        }
+        if (countSpan) countSpan.innerText = filtered.length;
+        if (filtered.length === 0) {
+            container.innerHTML = `<div class="empty-state"><i class="fa-regular fa-folder-open"></i><p>No files found. Convert a document to see it here.</p></div>`;
+            return;
+        }
+        container.innerHTML = filtered.map(file => `
+            <div class="file-card">
+                <div class="file-thumb">${getFileIcon(file.name)}</div>
+                <div class="file-info">
+                    <h4>${escapeHtml(file.name)}</h4>
+                    <p>${formatDate(file.date)} · ${formatSize(file.size)}</p>
+                </div>
+                <div class="file-actions">
+                    <i class="fa-solid fa-download" onclick="downloadFileById('${file.id}')"></i>
+                    <i class="fa-solid fa-trash-can" onclick="deleteFileById('${file.id}')"></i>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function downloadFileById(id) {
+        const file = generatedFiles.find(f => f.id === id);
+        if (file && file.blobUrl) {
+            const a = document.createElement('a');
+            a.href = file.blobUrl;
+            a.download = file.name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    }
+
+    function getFileIcon(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        if (ext === 'docx') return '<i class="fa-regular fa-file-word"></i>';
+        if (ext === 'html') return '<i class="fa-solid fa-code"></i>';
+        if (ext === 'txt') return '<i class="fa-regular fa-file-lines"></i>';
+        if (ext === 'zip') return '<i class="fa-regular fa-file-zipper"></i>';
+        if (ext === 'png' || ext === 'jpg') return '<i class="fa-regular fa-image"></i>';
+        return '<i class="fa-regular fa-file"></i>';
+    }
+
+    function formatDate(date) {
+        return date.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }) + ' · ' + date.toLocaleDateString();
+    }
+    function formatSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+        return (bytes/(1024*1024)).toFixed(1) + ' MB';
+    }
+    function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // expose to global for onclick
+    window.downloadFileById = downloadFileById;
+    window.deleteFileById = deleteFileById;
+
+    // -------------------- PDF CONVERSION ENGINE (enhanced with file saving) --------------------
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const filePreviewDiv = document.getElementById('filePreview');
+    const fileNameSpan = document.getElementById('fileName');
+    const formatBtns = document.querySelectorAll('.format-chip');
+    const convertBtn = document.getElementById('convertBtn');
+    const statusTextSpan = document.getElementById('statusText');
+    const statusIconSpan = document.querySelector('#statusMessage i');
+    
+    let selectedFile = null;
+    let currentFormat = 'docx';
+    
+    function setStatus(message, isError = false, isLoading = false) {
+        statusTextSpan.innerText = message;
+        if (isError) {
+            statusIconSpan.className = 'fas fa-exclamation-triangle';
+            statusIconSpan.style.color = '#dc2626';
+            statusIconSpan.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+        } else if (isLoading) {
+            statusIconSpan.innerHTML = '<div class="loader-mini"></div>';
+            statusIconSpan.style.color = '#f39c12';
+        } else {
+            statusIconSpan.className = 'fa-regular fa-heart';
+            statusIconSpan.style.color = '#f39c12';
+            statusIconSpan.innerHTML = '<i class="fa-regular fa-heart"></i>';
+        }
+    }
+    
+    function resetStatusReady() {
+        if (selectedFile) {
+            statusTextSpan.innerText = `Loaded: ${selectedFile.name} · Format: ${currentFormat.toUpperCase()}`;
+        } else {
+            statusTextSpan.innerText = 'Upload a PDF and choose format';
+        }
+        statusIconSpan.className = 'fa-regular fa-heart';
+        statusIconSpan.innerHTML = '<i class="fa-regular fa-heart"></i>';
+        statusIconSpan.style.color = '#f39c12';
+    }
+    
+    function handleFileSelect(file) {
+        if (!file || file.type !== 'application/pdf') {
+            setStatus('Invalid PDF file. Please select a valid document.', true);
+            selectedFile = null;
+            filePreviewDiv.style.display = 'none';
+            return false;
+        }
+        if (file.size > 30 * 1024 * 1024) {
+            setStatus('File exceeds 30MB limit. Choose a smaller PDF.', true);
+            selectedFile = null;
+            filePreviewDiv.style.display = 'none';
+            return false;
+        }
+        selectedFile = file;
+        fileNameSpan.innerText = file.name.length > 28 ? file.name.slice(0,25)+'...' : file.name;
+        filePreviewDiv.style.display = 'inline-flex';
+        setStatus(`Loaded: ${file.name} · Ready for ${currentFormat.toUpperCase()}`, false);
+        resetStatusReady();
+        return true;
+    }
+    
+    uploadArea.addEventListener('click', () => fileInput.click());
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = '#f39c12';
+        uploadArea.style.background = '#fff3e2';
+    });
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.style.borderColor = '#ffe0b5';
+        uploadArea.style.background = '#fffdf7';
+    });
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = '#ffe0b5';
+        uploadArea.style.background = '#fffdf7';
+        if (e.dataTransfer.files.length) handleFileSelect(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) handleFileSelect(e.target.files[0]);
+    });
+    
+    formatBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            formatBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentFormat = btn.getAttribute('data-format');
+            if (selectedFile) setStatus(`Format changed to ${currentFormat.toUpperCase()} · ${selectedFile.name}`, false);
+            else setStatus(`Format set to ${currentFormat.toUpperCase()}. Upload a PDF.`, false);
+            resetStatusReady();
+        });
+    });
+    
+    async function extractFullTextFromPDF(arrayBuffer) {
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        const pdfDoc = await loadingTask.promise;
+        let fullText = '';
+        for (let i = 1; i <= pdfDoc.numPages; i++) {
+            const page = await pdfDoc.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map(item => item.str).join(' ');
+            fullText += pageText + '\n\n';
+        }
+        return fullText.trim() || "No extractable text (this PDF may be scanned).";
+    }
+    
+    function escapeHtmlForText(str) {
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    // Conversion functions with file registration
+    async function convertToTxt(file) {
+        setStatus('Extracting text for TXT export...', false, true);
+        const buf = await file.arrayBuffer();
+        const text = await extractFullTextFromPDF(buf);
+        const blob = new Blob([text], { type: 'text/plain' });
+        const blobUrl = URL.createObjectURL(blob);
+        const outName = file.name.replace(/\.pdf$/i, '') + '.txt';
+        addGeneratedFile(outName, blobUrl, blob.size, 'text/plain');
+        setStatus('TXT file generated and saved to Files.', false);
+        return blob;
+    }
+    
+    async function convertToHtml(file) {
+        setStatus('Building HTML document...', false, true);
+        const buf = await file.arrayBuffer();
+        const text = await extractFullTextFromPDF(buf);
+        const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${escapeHtmlForText(file.name)}</title><style>body{font-family:Inter,sans-serif;max-width:900px;margin:40px auto;padding:20px;background:#fef9e6;}pre{background:#fff2df;padding:20px;border-radius:20px;}</style></head><body><h1>Converted from: ${escapeHtmlForText(file.name)}</h1><pre>${escapeHtmlForText(text)}</pre></body></html>`;
+        const blob = new Blob([html], { type: 'text/html' });
+        const blobUrl = URL.createObjectURL(blob);
+        const outName = file.name.replace(/\.pdf$/i, '') + '.html';
+        addGeneratedFile(outName, blobUrl, blob.size, 'text/html');
+        setStatus('HTML document saved to Files.', false);
+        return blob;
+    }
+    
+    async function convertToDocx(file) {
+        setStatus('Creating DOCX document...', false, true);
+        const buf = await file.arrayBuffer();
+        const fullText = await extractFullTextFromPDF(buf);
+        const paragraphs = fullText.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+        if (paragraphs.length === 0) paragraphs.push(fullText || "(no content)");
+        const { Document, Packer, Paragraph, TextRun, AlignmentType } = window.docx;
+        const docParagraphs = paragraphs.map(para => new Paragraph({
+            children: [new TextRun({ text: para.trim(), size: 24, font: "Calibri" })],
+            spacing: { after: 200 }
+        }));
+        const doc = new Document({
+            sections: [{
+                children: [
+                    new Paragraph({ children: [new TextRun({ text: `Converted from: ${file.name}`, bold: true, size: 32, color: "E67E22" })], alignment: AlignmentType.CENTER, spacing: { after: 300 } }),
+                    ...docParagraphs
+                ]
+            }]
+        });
+        const blob = await Packer.toBlob(doc);
+        const blobUrl = URL.createObjectURL(blob);
+        const outName = file.name.replace(/\.pdf$/i, '') + '.docx';
+        addGeneratedFile(outName, blobUrl, blob.size, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        setStatus('DOCX file saved to Files.', false);
+        return blob;
+    }
+    
+    async function convertToImages(file, imageFormat) {
+        setStatus(`Rendering PDF pages as ${imageFormat.toUpperCase()} images...`, false, true);
+        const buf = await file.arrayBuffer();
+        const pdfDoc = await pdfjsLib.getDocument({ data: buf }).promise;
+        const numPages = pdfDoc.numPages;
+        const zip = new JSZip();
+        const scale = 2.0;
+        for (let i = 1; i <= numPages; i++) {
+            const page = await pdfDoc.getPage(i);
+            const viewport = page.getViewport({ scale });
+            const canvas = document.createElement('canvas');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            const ctx = canvas.getContext('2d');
+            await page.render({ canvasContext: ctx, viewport, background: 'white' }).promise;
+            let blob;
+            if (imageFormat === 'png') blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+            else blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.92));
+            const ext = imageFormat === 'png' ? 'png' : 'jpg';
+            zip.file(`page_${i}.${ext}`, blob, { binary: true });
+            setStatus(`Rendered page ${i}/${numPages}`, false, true);
+        }
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const blobUrl = URL.createObjectURL(zipBlob);
+        const outName = file.name.replace(/\.pdf$/i, `_${imageFormat}_pages.zip`);
+        addGeneratedFile(outName, blobUrl, zipBlob.size, 'application/zip');
+        setStatus(`ZIP with ${numPages} images saved to Files.`, false);
+        return zipBlob;
+    }
+    
+    async function startConversion() {
+        if (!selectedFile) {
+            setStatus('No PDF selected. Please upload a PDF file first.', true);
+            return;
+        }
+        convertBtn.disabled = true;
+        const originalHTML = convertBtn.innerHTML;
+        convertBtn.innerHTML = '<i class="fa-solid fa-spinner fa-pulse"></i> Converting...';
+        try {
+            if (currentFormat === 'txt') await convertToTxt(selectedFile);
+            else if (currentFormat === 'html') await convertToHtml(selectedFile);
+            else if (currentFormat === 'docx') {
+                if (typeof window.docx === 'undefined') throw new Error("DOCX library not loaded");
+                await convertToDocx(selectedFile);
+            }
+            else if (currentFormat === 'png') await convertToImages(selectedFile, 'png');
+            else if (currentFormat === 'jpg') await convertToImages(selectedFile, 'jpg');
+            else throw new Error('Unsupported format');
+            resetStatusReady();
+        } catch (err) {
+            console.error(err);
+            setStatus(`Conversion error: ${err.message || 'Unknown error'}`, true);
+        } finally {
+            convertBtn.disabled = false;
+            convertBtn.innerHTML = originalHTML;
+            if (selectedFile) resetStatusReady();
+        }
+    }
+    
+    convertBtn.addEventListener('click', startConversion);
+    document.querySelector('.format-chip[data-format="docx"]').classList.add('active');
+    currentFormat = 'docx';
+    setStatus('We Love PDF! Upload any PDF — DOCX/HTML/TXT/Images, all local and secure.', false);
+    
+    // Clear all files buttons
+    document.getElementById('clearAllFilesBtn')?.addEventListener('click', () => {
+        if (confirm('Delete all generated files? This cannot be undone.')) clearAllFiles();
+    });
+    document.getElementById('clearRecentBtn')?.addEventListener('click', () => {
+        if (confirm('Delete all generated files?')) clearAllFiles();
+    });
+    
+    // Search functionality
+    const searchInput = document.getElementById('fileSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', () => renderAllFiles());
+    }
+    
+    // Bottom navigation
+    const navItems = document.querySelectorAll('.nav-item');
+    const screens = {
+        'home-screen': document.getElementById('home-screen'),
+        'files-screen': document.getElementById('files-screen'),
+        'settings-screen': document.getElementById('settings-screen')
+    };
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const screenId = item.getAttribute('data-screen');
+            if (!screenId || !screens[screenId]) return;
+            Object.values(screens).forEach(screen => screen.classList.remove('active'));
+            screens[screenId].classList.add('active');
+            navItems.forEach(nav => nav.classList.remove('active'));
+            item.classList.add('active');
+            if (screenId === 'files-screen') renderAllFiles();
+            if (screenId === 'home-screen') renderRecentFiles();
+        });
+    });
+    
+    // GitHub button
+    const githubBtn = document.getElementById('githubBtn');
+    if (githubBtn) {
+        githubBtn.addEventListener('click', () => {
+            window.open('https://github.com/Ottahen', '_blank');
+        });
+    }
+    
+    // Premium fake button
+    const premiumBtn = document.getElementById('premiumFakeBtn');
+    if (premiumBtn) {
+        premiumBtn.addEventListener('click', () => {
+            setStatus('All features are already free and client‑side!', false);
+        });
+    }
+    
+    // initial renders
+    renderRecentFiles();
+    renderAllFiles();
+</script>
+</body>
+</html>
