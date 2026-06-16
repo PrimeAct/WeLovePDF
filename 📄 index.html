@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>We Love PDF · Chaton Fat & Vault</title>
+    <!-- Google Fonts & Font Awesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Libraries for PDF, Image, DOCX -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="phone-container">
+        <!-- HOME SCREEN -->
+        <div id="home-screen" class="screen active">
+            <div class="header">
+                <div class="search-bar">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Search PDFs">
+                    <i class="fa-solid fa-camera camera-btn"></i>
+                </div>
+            </div>
+            <div class="scroll-area">
+                <div class="action-grid">
+                    <div class="action-item"><div class="icon-box teal"><i class="fa-solid fa-qrcode"></i></div><span>Smart Scan</span></div>
+                    <div class="action-item"><div class="icon-box blue"><i class="fa-solid fa-file-lines"></i></div><span>Docs</span></div>
+                    <div class="action-item"><div class="icon-box teal"><i class="fa-solid fa-file-pdf"></i></div><span>SVG to PDF</span></div>
+                    <div class="action-item"><div class="icon-box teal"><i class="fa-solid fa-image"></i></div><span>Import Image</span></div>
+                </div>
+                <!-- PDF to Any Format -->
+                <div class="converter-card">
+                    <div class="converter-title">
+                        <i class="fa-regular fa-heart"></i>
+                        <span>PDF to DOCX / HTML / TXT / Images</span>
+                    </div>
+                    <div class="upload-area" id="uploadArea">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <h4>Tap or drop PDF here</h4>
+                        <p>max 30MB · 100% local & private</p>
+                        <input type="file" id="fileInput" accept=".pdf" style="display:none;">
+                        <div id="filePreview" class="file-badge" style="display:none;">
+                            <i class="fa-regular fa-file-pdf"></i> <span id="fileName"></span>
+                        </div>
+                    </div>
+                    <div class="format-label"><i class="fa-regular fa-circle-dot"></i> Output format</div>
+                    <div class="format-grid" id="formatGrid">
+                        <button data-format="docx" class="format-chip"><i class="fa-regular fa-file-word"></i> DOCX</button>
+                        <button data-format="html" class="format-chip"><i class="fa-solid fa-code"></i> HTML</button>
+                        <button data-format="txt" class="format-chip"><i class="fa-regular fa-file-lines"></i> TXT</button>
+                        <button data-format="png" class="format-chip"><i class="fa-regular fa-image"></i> PNG (ZIP)</button>
+                        <button data-format="jpg" class="format-chip"><i class="fa-regular fa-camera"></i> JPG (ZIP)</button>
+                    </div>
+                    <div class="vault-option">
+                        <label><input type="checkbox" id="saveToVaultCheckbox"> Save to Secret Vault (encrypted)</label>
+                    </div>
+                    <button id="convertBtn" class="convert-btn"><i class="fa-solid fa-wand-magic"></i> Convert Now</button>
+                    <div id="statusMessage" class="status-area">
+                        <i class="fa-regular fa-heart"></i>
+                        <span id="statusText">Ready · Upload PDF & pick format</span>
+                    </div>
+                </div>
+                <!-- Images to PDF -->
+                <div class="image-pdf-card">
+                    <div class="converter-title">
+                        <i class="fa-regular fa-images"></i>
+                        <span>Images to PDF</span>
+                    </div>
+                    <div class="image-upload-area" id="imageUploadArea">
+                        <i class="fa-regular fa-image"></i>
+                        <h4>Select one or more images</h4>
+                        <p>JPG, PNG, GIF, WebP · up to 20 images</p>
+                        <input type="file" id="imageInput" accept="image/*" multiple style="display:none;">
+                        <div id="imagePreviewList" class="image-preview-list" style="display:none;"></div>
+                    </div>
+                    <div class="pdf-options">
+                        <select id="pageSizeSelect">
+                            <option value="a4">A4</option>
+                            <option value="letter">Letter</option>
+                            <option value="fit">Fit to Image</option>
+                        </select>
+                        <select id="orientationSelect">
+                            <option value="portrait">Portrait</option>
+                            <option value="landscape">Landscape</option>
+                        </select>
+                        <button id="clearImagesBtn" class="clear-images"><i class="fa-solid fa-trash-can"></i> Clear</button>
+                    </div>
+                    <div class="vault-option">
+                        <label><input type="checkbox" id="imageToVaultCheckbox"> Save to Secret Vault (encrypted)</label>
+                    </div>
+                    <button id="imagesToPdfBtn" class="convert-btn" style="background:linear-gradient(95deg,#f39c12,#e67e22);"><i class="fa-regular fa-file-pdf"></i> Create PDF from Images</button>
+                </div>
+                <div class="section-header">
+                    <h3>Recent Files</h3>
+                    <a id="clearRecentBtn" style="cursor:pointer;">Clear all <i class="fa-solid fa-trash-can"></i></a>
+                </div>
+                <div id="recentFilesContainer">
+                    <div class="empty-state"><i class="fa-regular fa-folder-open"></i><p>No files yet. Convert a PDF or create PDF from images.</p></div>
+                </div>
+            </div>
+        </div>
+        <!-- FILES SCREEN -->
+        <div id="files-screen" class="screen">
+            <div class="header">
+                <div class="search-bar">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Search files" id="fileSearchInput">
+                    <i class="fa-solid fa-camera camera-btn"></i>
+                </div>
+            </div>
+            <div class="scroll-area">
+                <div class="action-grid">
+                    <div class="action-item"><div class="icon-box orange"><i class="fa-solid fa-code-merge"></i></div><span>Merge PDF</span></div>
+                    <div class="action-item"><div class="icon-box teal"><i class="fa-solid fa-image"></i></div><span>Import Image</span></div>
+                    <div class="action-item"><div class="icon-box orange"><i class="fa-solid fa-folder-plus"></i></div><span>New Folder</span></div>
+                    <div class="action-item"><div class="icon-box teal"><i class="fa-solid fa-file-import"></i></div><span>Import Files</span></div>
+                </div>
+                <div class="section-header">
+                    <h3>All files (<span id="fileCount">0</span>)</h3>
+                    <div><i class="fa-solid fa-trash-can" id="clearAllFilesBtn" style="color:var(--primary);cursor:pointer;"></i></div>
+                </div>
+                <div id="allFilesContainer">
+                    <div class="empty-state"><i class="fa-regular fa-folder-open"></i><p>No generated files yet.</p></div>
+                </div>
+            </div>
+        </div>
+        <!-- VAULT SCREEN -->
+        <div id="vault-screen" class="screen">
+            <div class="header">
+                <div class="search-bar">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" id="vaultPasswordInput" placeholder="Enter vault password">
+                    <i class="fa-solid fa-key" id="unlockVaultBtn" style="cursor:pointer;color:var(--primary);"></i>
+                </div>
+            </div>
+            <div class="scroll-area">
+                <div class="section-header">
+                    <h3>Secret Vault <i class="fa-solid fa-shield-halved"></i></h3>
+                    <div><i class="fa-solid fa-trash-can" id="clearVaultBtn" style="color:var(--primary);cursor:pointer;"></i></div>
+                </div>
+                <div id="vaultFilesContainer">
+                    <div class="empty-state"><i class="fa-regular fa-folder-lock"></i><p>Enter password to unlock vault.</p></div>
+                </div>
+            </div>
+        </div>
+        <!-- CHATON FAT SCREEN -->
+        <div id="chat-screen" class="screen">
+            <div class="header">
+                <div class="search-bar" style="justify-content:space-between;">
+                    <i class="fa-solid fa-comment-dots" style="color:var(--orange);"></i>
+                    <span style="font-weight:700;font-size:0.9rem;flex:1;text-align:center;">Chaton Fat</span>
+                    <i class="fa-solid fa-trash-can" id="clearChatBtn" style="color:var(--primary);cursor:pointer;"></i>
+                </div>
+            </div>
+            <div class="scroll-area" style="padding-bottom:70px;">
+                <div id="chatMessages" class="chat-messages">
+                    <div class="empty-state"><i class="fa-regular fa-comment"></i><p>Start a conversation. Set API key in Settings.</p></div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" id="chatInput" placeholder="Type your message..." />
+                    <button id="chatSendBtn"><i class="fa-solid fa-paper-plane"></i> Send</button>
+                </div>
+            </div>
+        </div>
+        <!-- SETTINGS SCREEN -->
+        <div id="settings-screen" class="screen">
+            <div class="scroll-area">
+                <div class="premium-card">
+                    <h2>✨ Free & Private Converter</h2>
+                    <p>All conversions happen locally · No uploads</p>
+                    <div class="premium-features">
+                        <div class="feature"><i class="fa-solid fa-ban"></i>No servers</div>
+                        <div class="feature"><i class="fa-solid fa-pen-to-square"></i>Real DOCX</div>
+                        <div class="feature"><i class="fa-solid fa-cloud-arrow-up"></i>Local only</div>
+                    </div>
+                    <button class="upgrade-btn" id="premiumFakeBtn"><i class="fa-regular fa-gem"></i> All features free</button>
+                </div>
+                <div class="settings-list">
+                    <div class="settings-item">
+                        <i class="fa-regular fa-pen-to-square"></i> Ask for filename before saving
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="customNamingToggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="settings-item">
+                        <i class="fa-solid fa-lock"></i> Secret Vault Password
+                        <input type="password" id="vaultSetPassword" placeholder="New password">
+                        <button id="saveVaultPasswordBtn" class="vault-password-btn">Save</button>
+                    </div>
+                    <div class="settings-item">
+                        <i class="fa-solid fa-key"></i> API Key (Chaton Fat)
+                        <input type="password" id="apiKeyInput" placeholder="sk-...">
+                    </div>
+                    <div class="settings-item">
+                        <i class="fa-solid fa-link"></i> API Endpoint
+                        <input type="text" id="apiEndpointInput" placeholder="https://api.openai.com/v1/chat/completions">
+                    </div>
+                    <div class="settings-item"><i class="fa-regular fa-user"></i> Privacy-first mode <i class="fa-solid fa-shield-halved"></i></div>
+                    <div class="settings-item"><i class="fa-solid fa-expand"></i> Local PDF engine <i class="fa-solid fa-check-circle" style="color:#4DB6AC;"></i></div>
+                    <div class="settings-item"><i class="fa-solid fa-file-contract"></i> Client-side only <i class="fa-solid fa-lock"></i></div>
+                    <div class="settings-item"><i class="fa-regular fa-comment-dots"></i> Written by ℒ <i class="fa-regular fa-heart"></i></div>
+                    <div style="margin-top:16px;">
+                        <button id="githubBtn" class="github-btn"><i class="fa-brands fa-github"></i> GitHub · Ottahen</button>
+                    </div>
+                    <div class="settings-item" style="border-bottom:none;justify-content:center;gap:8px;">
+                        <i class="fa-regular fa-copyright"></i> We Love PDF · Open Source
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- BOTTOM NAV -->
+        <nav class="bottom-nav">
+            <div class="nav-item active" data-screen="home-screen"><i class="fa-solid fa-house"></i><span>Home</span></div>
+            <div class="nav-item" data-screen="files-screen"><i class="fa-regular fa-file-lines"></i><span>Files</span></div>
+            <div class="nav-item" data-screen="vault-screen"><i class="fa-solid fa-lock"></i><span>Vault</span></div>
+            <div class="nav-item" data-screen="chat-screen"><i class="fa-solid fa-comment-dots"></i><span>Chaton Fat</span></div>
+            <div class="nav-item" data-screen="settings-screen"><i class="fa-solid fa-gear"></i><span>Settings</span></div>
+        </nav>
+    </div>
+    <script type="module" src="app.js"></script>
+</body>
+</html>
